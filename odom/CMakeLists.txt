@@ -9,6 +9,7 @@ find_package(
     message_generation
     nav_msgs
     std_msgs
+    message_filters
 )
 
 add_message_files(
