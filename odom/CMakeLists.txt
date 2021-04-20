@@ -1,0 +1,37 @@
+cmake_minimum_required(VERSION 3.0.2)
+project(odom)
+
+find_package(
+  catkin REQUIRED
+  COMPONENTS
+    roscpp
+    genmsg
+    message_generation
+    nav_msgs
+    std_msgs
+)
+
+add_message_files(
+  FILES
+    MotorSpeed.msg
+)
+
+generate_messages(
+  DEPENDENCIES
+    std_msgs
+    nav_msgs
+)
+
+catkin_package(
+  CATKIN_DEPENDS
+    std_msgs
+    nav_msgs
+    message_runtime
+)
+
+include_directories(include ${catkin_INCLUDE_DIRS})
+
+add_executable(wheels src/wheels.cpp)
+target_link_libraries(wheels ${catkin_LIBRARIES})
+add_dependencies(wheels ${${PROJECT_NAME}_EXPORTED_TARGETS}
+	${catkin_EXPORTED_TARGETS})
