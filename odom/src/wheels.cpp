@@ -25,6 +25,7 @@ public:
   odom::WheelSpeed w_speed; // Custom msg WheelSpeed
   const double gear_ratio = 0.027027027027; // gear_ratio = 1/37;
   const double radius = 0.1575;
+  const double radians_convert = 0.10472;  // revolution/min -> radians/sec
 
 private:
   ros::Publisher pub;
@@ -38,13 +39,13 @@ public:
   void update(const odom::MotorSpeed::ConstPtr& fr_w, const odom::MotorSpeed::ConstPtr& fl_w,
               const odom::MotorSpeed::ConstPtr& rr_w, const odom::MotorSpeed::ConstPtr& rl_w)
   {
-    w_speed.rpm_fr = fr_w -> rpm * gear_ratio * radius;
+    w_speed.rpm_fr = fr_w -> rpm * gear_ratio * radius * radians_convert;
     w_speed.header_fr = fr_w -> header;
-    w_speed.rpm_fl = fl_w -> rpm * gear_ratio * radius;
+    w_speed.rpm_fl = fl_w -> rpm * gear_ratio * radius * radians_convert;
     w_speed.header_fl = fl_w -> header;
-    w_speed.rpm_rr = rr_w -> rpm * gear_ratio * radius;
+    w_speed.rpm_rr = rr_w -> rpm * gear_ratio * radius * radians_convert;
     w_speed.header_rr = rr_w -> header;
-    w_speed.rpm_rl = rl_w -> rpm * gear_ratio * radius;
+    w_speed.rpm_rl = rl_w -> rpm * gear_ratio * radius * radians_convert;
     w_speed.header_rl = rl_w -> header;
 
   };
