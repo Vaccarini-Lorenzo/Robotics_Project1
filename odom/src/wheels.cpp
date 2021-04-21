@@ -7,9 +7,22 @@
 #include <odom/MotorSpeed.h>
 #include <odom/WheelSpeed.h>
 
+/*
+    Aggiunta classe InputConverter e custom message WheelSpeed:
+    Pubblicare 4 topic (uno per ogni ruota) mi sembrava un po' superfluo: Il custom
+    message WheelSpeed ha gli header e i rpm (convertiti in velocità lineare) di ogni
+    ruota in modo da poter pubblicare un singolo messaggio su un singolo topic.
+    La classe InputConverter si occupa di fare l'update/publish del messaggio w_speed
+    (custom WheelSpeed).
+    InputConverter viene instanziato nel main e passato al callback subscriber nel
+    quale vengono chiamati i metodi update (angular v -> linear v) e publ.
+    La conversione in velocità lineare è stata fatta assumento un gear ratio di 1:37
+    e un raggio di 0.1575 m.
+*/
+
 class InputConverter{
 public:
-  odom::WheelSpeed w_speed;
+  odom::WheelSpeed w_speed; // Custom msg WheelSpeed
   const double gear_ratio = 0.027027027027; // gear_ratio = 1/37;
   const double radius = 0.1575;
 
@@ -19,7 +32,7 @@ private:
 
 public:
   InputConverter(){
-    pub = n.advertise<odom::WheelSpeed>("/tmp_output", 1000);
+    pub = n.advertise<odom::WheelSpeed>("/tmp_output", 1000); // Il costruttore inizializza il topic su cui pubblichiamo
   }
 
   void update(const odom::MotorSpeed::ConstPtr& fr_w, const odom::MotorSpeed::ConstPtr& fl_w,
@@ -71,6 +84,7 @@ int main(int argc, char** argv){
 
   message_filters::Synchronizer<MySyncPolicy> sync(MySyncPolicy(10), fr_sub, fl_sub, rr_sub, rl_sub);
 
+  // Binding dei 4 topic sincronizzati e dell'istanza della classe InputConverter
   sync.registerCallback(boost::bind(&callback, _1, _2, _3, _4, input_converter));
 
   ros::spin();
