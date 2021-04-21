@@ -15,6 +15,7 @@ find_package(
 add_message_files(
   FILES
     MotorSpeed.msg
+    WheelSpeed.msg
 )
 
 generate_messages(
