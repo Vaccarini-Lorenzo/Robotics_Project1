@@ -33,21 +33,15 @@ private:
 
 public:
   InputConverter(){
-    pub = n.advertise<odom::WheelSpeed>("/tmp_output", 1000); // Il costruttore inizializza il topic su cui pubblichiamo
+    pub = n.advertise<odom::WheelSpeed>("/wheels_velocity", 1000); // Il costruttore inizializza il topic su cui pubblichiamo
   }
 
   void update(const odom::MotorSpeed::ConstPtr& fr_w, const odom::MotorSpeed::ConstPtr& fl_w,
               const odom::MotorSpeed::ConstPtr& rr_w, const odom::MotorSpeed::ConstPtr& rl_w)
   {
-    w_speed.rpm_fr = fr_w -> rpm * gear_ratio * radius * radians_convert;
-    w_speed.header_fr = fr_w -> header;
-    w_speed.rpm_fl = fl_w -> rpm * gear_ratio * radius * radians_convert;
-    w_speed.header_fl = fl_w -> header;
-    w_speed.rpm_rr = rr_w -> rpm * gear_ratio * radius * radians_convert;
-    w_speed.header_rr = rr_w -> header;
-    w_speed.rpm_rl = rl_w -> rpm * gear_ratio * radius * radians_convert;
-    w_speed.header_rl = rl_w -> header;
-
+    w_speed.v_r = (fr_w -> rpm * gear_ratio * radius * radians_convert + rr_w -> rpm * gear_ratio * radius * radians_convert)/2;
+    w_speed.v_l = (fl_w -> rpm * gear_ratio * radius * radians_convert + rl_w -> rpm * gear_ratio * radius * radians_convert)/2;
+    w_speed.header = fr_w -> header;
   };
 
   void publ(){
