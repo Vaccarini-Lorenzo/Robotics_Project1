@@ -37,3 +37,13 @@ add_executable(wheels src/wheels.cpp)
 target_link_libraries(wheels ${catkin_LIBRARIES})
 add_dependencies(wheels ${${PROJECT_NAME}_EXPORTED_TARGETS}
 	${catkin_EXPORTED_TARGETS})
+
+add_executable(file_write src/t.cpp)
+target_link_libraries(file_write ${catkin_LIBRARIES})
+add_dependencies(file_write ${${PROJECT_NAME}_EXPORTED_TARGETS}
+	${catkin_EXPORTED_TARGETS})
+
+add_executable(max_delta src/max_delta.cpp)
+target_link_libraries(max_delta ${catkin_LIBRARIES})
+add_dependencies(max_delta ${${PROJECT_NAME}_EXPORTED_TARGETS}
+	${catkin_EXPORTED_TARGETS})

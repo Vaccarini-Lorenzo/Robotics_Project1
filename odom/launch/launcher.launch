@@ -1,0 +1,8 @@
+<launch>
+<arg name = "node_start_delay" default="1.0" />
+<arg name = "incremental_var_base_line" />
+<node pkg = "odom" type = "wheels" name = "wheels" />
+<node pkg = "odom" type = "integrator" name = "integrator" args = "incremental_var_base_line"/>
+<node pkg = "odom" type = "max_delta" name = "max_delta" />
+<node pkg = "rosbag" type = "play" name = "bag" args = "/home/lorenzo/robotics_hw1/bag1.bag" launch-prefix = "bash -c 'sleep $(arg node_start_delay); $0 $@' " />
+</launch>
