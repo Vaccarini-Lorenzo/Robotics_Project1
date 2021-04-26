@@ -6,7 +6,12 @@
 #include <message_filters/sync_policies/approximate_time.h>
 #include <odom/MotorSpeed.h>
 #include <odom/WheelSpeed.h>
-#include <cmath>
+#include <geometry_msgs/TwistStamped.h>
+
+#define RADIUS 0.1575
+#define RAD_CONVERT 0.10472
+#define GEAR_RATIO 0.027027027
+#define APPARENT_BASELINE 0.9875
 
 /*
     Aggiunta classe InputConverter e custom message WheelSpeed:
@@ -19,57 +24,60 @@
     quale vengono chiamati i metodi update (angular v -> linear v) e publ.
     La conversione in velocità lineare è stata fatta assumento un gear ratio di 1:37
     e un raggio di 0.1575 m.
+    ---
+    revolution/min -> radians/sec
 */
-class InputConverter{
+
+class InputConverter {
 public:
-  odom::WheelSpeed w_speed; // Custom msg WheelSpeed
-  const double gear_ratio = 0.027027027027; // gear_ratio = 1/37;
-  const double radius = 0.1575;
-  const double radians_convert = 0.10472;  // revolution/min -> radians/sec
+  double vl, vr;
+  geometry_msgs::TwistStamped twist;
 
 private:
   ros::Publisher pub;
   ros::NodeHandle n;
 
 public:
-  InputConverter(){
-    pub = n.advertise<odom::WheelSpeed>("/wheels_velocity", 1000); // Il costruttore inizializza il topic su cui pubblichiamo
+  InputConverter() {
+    pub = n.advertise<geometry_msgs::TwistStamped>("/wheels_velocity", 1000); // Il costruttore inizializza il topic su cui pubblichiamo
   }
 
   void update(const odom::MotorSpeed::ConstPtr& fr_w, const odom::MotorSpeed::ConstPtr& fl_w,
-              const odom::MotorSpeed::ConstPtr& rr_w, const odom::MotorSpeed::ConstPtr& rl_w)
-  {
-    w_speed.v_r = (fr_w -> rpm * gear_ratio * radius * radians_convert + rr_w -> rpm * gear_ratio * radius * radians_convert)/2;
-    w_speed.v_l = (fl_w -> rpm * gear_ratio * radius * radians_convert + rl_w -> rpm * gear_ratio * radius * radians_convert)/2;
-    w_speed.header = fr_w -> header;
-  };
+              const odom::MotorSpeed::ConstPtr& rr_w, const odom::MotorSpeed::ConstPtr& rl_w) {
+    vr = (fr_w -> rpm * GEAR_RATIO * RADIUS * RAD_CONVERT + rr_w -> rpm * GEAR_RATIO * RADIUS * RAD_CONVERT)/2;
+    vl = (fl_w -> rpm * GEAR_RATIO * RADIUS * RAD_CONVERT + rl_w -> rpm * GEAR_RATIO * RADIUS * RAD_CONVERT)/2;
 
-  void publ(){
-    pub.publish(w_speed);
+    twist.header.stamp = ros::Time::now();
+    twist.header.frame_id = "wheels";
+    twist.twist.linear.x = (vl + vr) / 2;
+    twist.twist.linear.y = 0;
+    twist.twist.linear.z = 0;
+    twist.twist.angular.z = (- vl + vr) / APPARENT_BASELINE;
   }
 
+  void publish_message() {
+    pub.publish(twist);
+  }
 };
 
 void callback(const odom::MotorSpeed::ConstPtr& fr_msg,
               const odom::MotorSpeed::ConstPtr& fl_msg,
               const odom::MotorSpeed::ConstPtr& rr_msg,
               const odom::MotorSpeed::ConstPtr& rl_msg,
-              InputConverter i_c){
-/*              ROS_INFO("Received 4 values\n");
-              ROS_INFO("fr: rpm value = [%f]\n", fr_msg -> rpm);
-              ROS_INFO("fl: rpm value = [%f]\n", fl_msg -> rpm);
-              ROS_INFO("rr: rpm value = [%f]\n", rr_msg -> rpm);
-              ROS_INFO("rl: rpm value = [%f]\n", rl_msg -> rpm);  */
-              i_c.update(fr_msg, fl_msg, rr_msg, rl_msg);
-              i_c.publ();
-              };
+              InputConverter converter) {
+  // ROS_INFO("Received 4 values\n");
+  // ROS_INFO("fr: rpm value = [%f]\n", fr_msg -> rpm);
+  // ROS_INFO("fl: rpm value = [%f]\n", fl_msg -> rpm);
+  // ROS_INFO("rr: rpm value = [%f]\n", rr_msg -> rpm);
+  // ROS_INFO("rl: rpm value = [%f]\n", rl_msg -> rpm);
+  converter.update(fr_msg, fl_msg, rr_msg, rl_msg);
+  converter.publish_message();
+}
 
 int main(int argc, char** argv){
   ros::init(argc, argv, "odometry");
   ros::NodeHandle n;
   InputConverter input_converter;
-  int incremental_var_base_line;
-  ROS_INFO("\n\nIncremental_var_base_line = %s\n\n", argv[1]);
 
   message_filters::Subscriber<odom::MotorSpeed> fr_sub(n, "/motor_speed_fr", 1);
   message_filters::Subscriber<odom::MotorSpeed> fl_sub(n, "/motor_speed_fl", 1);
@@ -81,7 +89,7 @@ int main(int argc, char** argv){
 
   message_filters::Synchronizer<MySyncPolicy> sync(MySyncPolicy(10), fr_sub, fl_sub, rr_sub, rl_sub);
 
-  // Binding dei 4 topic sincronizzati e dell'istanza della classe InputConverter
+  // Binding 4 topics to instance of InputConverter
   sync.registerCallback(boost::bind(&callback, _1, _2, _3, _4, input_converter));
 
   ros::spin();
