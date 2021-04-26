@@ -6,6 +6,7 @@
 #include <message_filters/sync_policies/approximate_time.h>
 #include <odom/MotorSpeed.h>
 #include <odom/WheelSpeed.h>
+#include <cmath>
 
 /*
     Aggiunta classe InputConverter e custom message WheelSpeed:
@@ -19,7 +20,6 @@
     La conversione in velocità lineare è stata fatta assumento un gear ratio di 1:37
     e un raggio di 0.1575 m.
 */
-
 class InputConverter{
 public:
   odom::WheelSpeed w_speed; // Custom msg WheelSpeed
@@ -68,6 +68,8 @@ int main(int argc, char** argv){
   ros::init(argc, argv, "odometry");
   ros::NodeHandle n;
   InputConverter input_converter;
+  int incremental_var_base_line;
+  ROS_INFO("\n\nIncremental_var_base_line = %s\n\n", argv[1]);
 
   message_filters::Subscriber<odom::MotorSpeed> fr_sub(n, "/motor_speed_fr", 1);
   message_filters::Subscriber<odom::MotorSpeed> fl_sub(n, "/motor_speed_fl", 1);

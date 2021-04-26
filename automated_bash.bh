@@ -1,0 +1,14 @@
+#!/bin/bash
+for i in {0..10}
+  do
+    echo "starting..."
+    sleep 2
+    /bin/bash -c "roslaunch odom launcher.launch incremental_var_base_line:=${i}"&
+    echo "launched odom..."
+    sleep 285
+    echo "finished sleeping...\n"
+    /bin/bash -c "rosnode kill -a"
+    echo "killed processes"
+    sleep 2
+  done
+}
