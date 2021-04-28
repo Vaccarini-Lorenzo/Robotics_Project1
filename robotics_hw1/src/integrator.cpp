@@ -1,26 +1,17 @@
 #include "ros/ros.h"
+#include "robotics_hw1/MotorSpeed.h"
+#include <geometry_msgs/TwistStamped.h>
 #include <nav_msgs/Odometry.h>
-#include <odom/WheelSpeed.h>
-#include <math.h>
 #include <tf/tf.h>
-
-/*
-  - read from topic the WheelSpeed message
-  - had to know the initial pose of the robot (needed to calculate the odometry)
-  - given the initial pose calculate the odometry in the main loop and publish it in a topic
-*/
-
-/*
-* TODO: custom main loop with the integration or with Timer approach
-*/
-
-
+#include <tf/transform_broadcaster.h>
+#include <math.h>
 
 
 class integrator_pub_sub {
 
 private:
   ros::NodeHandle n;
+  tf::TransformBroadcaster broadcaster;
 
   ros::Subscriber sub;
   ros::Publisher pub;
@@ -38,7 +29,7 @@ public:
     pub = n.advertise<nav_msgs::Odometry>("/my_odom", 1);
     last_time = ros::Time::now();
     current_time = ros::Time::now();
-    integration_method = 'e';
+    integration_method = 'r';
   }
 
   void init_odometry(double x, double y, double th) {
@@ -67,6 +58,7 @@ public:
     current_time = ros::Time::now();
     double delta_t = (current_time - last_time).toSec();
 
+    tf::Transform transform;
     nav_msgs::Odometry odom;
     odom.header.stamp = current_time;
     odom.header.frame_id = "odom";
@@ -77,18 +69,26 @@ public:
       runge_kutta(v, delta_t);
     }
 
-    geometry_msgs::Quaternion orientation = tf::createQuaternionMsgFromYaw(th);
+    /*
+    - convert the pose to a transform
+    - publish the transform
+    */
+    transform.setOrigin(tf::Vector3(x, y, 0));
+    tf::Quaternion orientation;
+    orientation.setRPY(0, 0, th);
+    transform.setRotation(orientation);
+    broadcaster.sendTransform(tf::StampedTransform(transform, current_time, "odom", "base_link"));
+
     odom.pose.pose.position.x = x;
     odom.pose.pose.position.y = y;
-    odom.pose.pose.orientation = orientation;
+    odom.pose.pose.orientation = tf::createQuaternionMsgFromYaw(th);
     odom.child_frame_id = "base_link";
     odom.twist.twist.linear.x = v->twist.linear.x;
     odom.twist.twist.angular.z = v->twist.angular.z;
 
-
-
     last_time = current_time;
     pub.publish(odom);
+    ROS_INFO("\npose:\n x= %f\n y= %f\n theta= %f", x, y, th);
   }
 };
 

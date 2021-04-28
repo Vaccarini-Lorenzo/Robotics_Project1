@@ -1,17 +1,16 @@
-
 #include "ros/ros.h"
-#include <sstream>
-#include <std_msgs/Float64.h>
-#include <message_filters/subscriber.h>
-#include <message_filters/sync_policies/approximate_time.h>
-#include <odom/MotorSpeed.h>
-#include <odom/WheelSpeed.h>
+#include "robotics_hw1/MotorSpeed.h"
 #include <geometry_msgs/TwistStamped.h>
+#include <message_filters/subscriber.h>
+#include <message_filters/time_synchronizer.h>
+#include <message_filters/sync_policies/approximate_time.h>
+#include <sstream>
 
 #define RADIUS 0.1575
 #define RAD_CONVERT 0.10472
 #define GEAR_RATIO 0.027027027
-#define APPARENT_BASELINE 0.9875
+#define APPARENT_BASELINE 1.116
+
 
 /*
     Aggiunta classe InputConverter e custom message WheelSpeed:
@@ -42,10 +41,10 @@ public:
     pub = n.advertise<geometry_msgs::TwistStamped>("/wheels_velocity", 1000); // Il costruttore inizializza il topic su cui pubblichiamo
   }
 
-  void update(const odom::MotorSpeed::ConstPtr& fr_w, const odom::MotorSpeed::ConstPtr& fl_w,
-              const odom::MotorSpeed::ConstPtr& rr_w, const odom::MotorSpeed::ConstPtr& rl_w) {
+  void update(const robotics_hw1::MotorSpeed::ConstPtr& fr_w, const robotics_hw1::MotorSpeed::ConstPtr& fl_w,
+              const robotics_hw1::MotorSpeed::ConstPtr& rr_w, const robotics_hw1::MotorSpeed::ConstPtr& rl_w) {
     vr = (fr_w -> rpm * GEAR_RATIO * RADIUS * RAD_CONVERT + rr_w -> rpm * GEAR_RATIO * RADIUS * RAD_CONVERT)/2;
-    vl = (fl_w -> rpm * GEAR_RATIO * RADIUS * RAD_CONVERT + rl_w -> rpm * GEAR_RATIO * RADIUS * RAD_CONVERT)/2;
+    vl = -(fl_w -> rpm * GEAR_RATIO * RADIUS * RAD_CONVERT + rl_w -> rpm * GEAR_RATIO * RADIUS * RAD_CONVERT)/2;
 
     twist.header.stamp = ros::Time::now();
     twist.header.frame_id = "wheels";
@@ -57,35 +56,31 @@ public:
 
   void publish_message() {
     pub.publish(twist);
+    ROS_INFO("\nv_x= %f\nomega_z= %f", twist.twist.linear.x, twist.twist.angular.z);
   }
 };
 
-void callback(const odom::MotorSpeed::ConstPtr& fr_msg,
-              const odom::MotorSpeed::ConstPtr& fl_msg,
-              const odom::MotorSpeed::ConstPtr& rr_msg,
-              const odom::MotorSpeed::ConstPtr& rl_msg,
+void callback(const robotics_hw1::MotorSpeed::ConstPtr& fr_msg,
+              const robotics_hw1::MotorSpeed::ConstPtr& fl_msg,
+              const robotics_hw1::MotorSpeed::ConstPtr& rr_msg,
+              const robotics_hw1::MotorSpeed::ConstPtr& rl_msg,
               InputConverter converter) {
-  // ROS_INFO("Received 4 values\n");
-  // ROS_INFO("fr: rpm value = [%f]\n", fr_msg -> rpm);
-  // ROS_INFO("fl: rpm value = [%f]\n", fl_msg -> rpm);
-  // ROS_INFO("rr: rpm value = [%f]\n", rr_msg -> rpm);
-  // ROS_INFO("rl: rpm value = [%f]\n", rl_msg -> rpm);
   converter.update(fr_msg, fl_msg, rr_msg, rl_msg);
   converter.publish_message();
 }
 
 int main(int argc, char** argv){
-  ros::init(argc, argv, "odometry");
+  ros::init(argc, argv, "wheel_converter");
   ros::NodeHandle n;
   InputConverter input_converter;
 
-  message_filters::Subscriber<odom::MotorSpeed> fr_sub(n, "/motor_speed_fr", 1);
-  message_filters::Subscriber<odom::MotorSpeed> fl_sub(n, "/motor_speed_fl", 1);
-  message_filters::Subscriber<odom::MotorSpeed> rr_sub(n, "/motor_speed_rr", 1);
-  message_filters::Subscriber<odom::MotorSpeed> rl_sub(n, "/motor_speed_rl", 1);
+  message_filters::Subscriber<robotics_hw1::MotorSpeed> fr_sub(n, "/motor_speed_fr", 1);
+  message_filters::Subscriber<robotics_hw1::MotorSpeed> fl_sub(n, "/motor_speed_fl", 1);
+  message_filters::Subscriber<robotics_hw1::MotorSpeed> rr_sub(n, "/motor_speed_rr", 1);
+  message_filters::Subscriber<robotics_hw1::MotorSpeed> rl_sub(n, "/motor_speed_rl", 1);
 
   typedef message_filters::sync_policies
-      ::ApproximateTime<odom::MotorSpeed, odom::MotorSpeed, odom::MotorSpeed, odom::MotorSpeed> MySyncPolicy;
+      ::ApproximateTime<robotics_hw1::MotorSpeed, robotics_hw1::MotorSpeed, robotics_hw1::MotorSpeed, robotics_hw1::MotorSpeed> MySyncPolicy;
 
   message_filters::Synchronizer<MySyncPolicy> sync(MySyncPolicy(10), fr_sub, fl_sub, rr_sub, rl_sub);
 
