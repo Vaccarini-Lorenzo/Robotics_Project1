@@ -11,6 +11,7 @@ find_package(catkin REQUIRED COMPONENTS
   message_generation
   message_filters
   tf
+  dynamic_reconfigure
 )
 
 ## Generate messages in the 'msg' folder
@@ -20,11 +21,11 @@ add_message_files(
 )
 
 ## Generate services in the 'srv' folder
-# add_service_files(
-#   FILES
-#   Service1.srv
-#   Service2.srv
-# )
+add_service_files(
+  FILES
+  SetPose.srv
+  SetZeroPose.srv
+)
 
 ## Generate actions in the 'action' folder
 # add_action_files(
@@ -37,13 +38,13 @@ add_message_files(
 generate_messages(
   DEPENDENCIES
   std_msgs
+  geometry_msgs
 )
 
 ## Generate dynamic reconfigure parameters in the 'cfg' folder
-# generate_dynamic_reconfigure_options(
-#   cfg/DynReconf1.cfg
-#   cfg/DynReconf2.cfg
-# )
+generate_dynamic_reconfigure_options(
+  cfg/parameters.cfg
+)
 
 ## Declare a catkin package
 catkin_package(
@@ -63,15 +64,35 @@ include_directories(
   ${catkin_INCLUDE_DIRS}
 )
 
-## wheels node
+## Wheels
 add_executable(wheels src/wheels.cpp)
 target_link_libraries(wheels ${catkin_LIBRARIES})
 add_dependencies(wheels robotics_hw1_generate_messages_cpp)
 
-## integrator node
+## integrator
 add_executable(integrator src/integrator.cpp)
 target_link_libraries(integrator ${catkin_LIBRARIES})
 add_dependencies(integrator
   ${${PROJECT_NAME}_EXPORTED_TARGETS}
   ${catkin_EXPORTED_TARGETS}
+  ${PROJECT_NAME}_gencfg
 )
+
+## Service client
+add_executable(service_client src/service_client.cpp)
+target_link_libraries(service_client ${catkin_LIBRARIES})
+add_dependencies(service_client
+  ${${PROJECT_NAME}_EXPORTED_TARGETS}
+  ${catkin_EXPORTED_TARGETS}
+)
+
+## Services:
+## SetPose
+add_executable(set_pose src/set_pose.cpp)
+target_link_libraries(set_pose ${catkin_LIBRARIES})
+add_dependencies(set_pose ${catkin_EXPORTED_TARGETS})
+
+## SetZeroPose
+add_executable(set_zero_pose src/set_zero_pose.cpp)
+target_link_libraries(set_zero_pose ${catkin_LIBRARIES})
+add_dependencies(set_zero_pose ${catkin_EXPORTED_TARGETS})
