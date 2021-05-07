@@ -18,6 +18,7 @@ find_package(catkin REQUIRED COMPONENTS
 add_message_files(
   FILES
   MotorSpeed.msg
+  CustomOdom.msg
 )
 
 ## Generate services in the 'srv' folder
@@ -39,6 +40,7 @@ generate_messages(
   DEPENDENCIES
   std_msgs
   geometry_msgs
+  nav_msgs
 )
 
 ## Generate dynamic reconfigure parameters in the 'cfg' folder
@@ -73,6 +75,7 @@ add_dependencies(wheels robotics_hw1_generate_messages_cpp)
 add_executable(integrator src/integrator.cpp)
 target_link_libraries(integrator ${catkin_LIBRARIES})
 add_dependencies(integrator
+  robotics_hw1_generate_messages_cpp
   ${${PROJECT_NAME}_EXPORTED_TARGETS}
   ${catkin_EXPORTED_TARGETS}
   ${PROJECT_NAME}_gencfg

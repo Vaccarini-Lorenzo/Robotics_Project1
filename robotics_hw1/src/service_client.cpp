@@ -64,15 +64,15 @@ TODO:
 
 int main(int argc, char **argv)
 {
-  if (argc == 1) {return 1;}
   ros::init(argc, argv, "service_client");
   ros::NodeHandle n;
-  ros::Publisher pub = n.advertise<geometry_msgs::Pose>("reset_odom", 1);
+  ros::Publisher pub = n.advertise<geometry_msgs::Pose>("/reset_odom", 1000);
   ros::ServiceClient client;
   robotics_hw1::SetPose srv_custom;
   robotics_hw1::SetZeroPose srv_zero;
   geometry_msgs::Pose p;
-
+  ROS_INFO("argc = %d", argc);
+  if (argc == 1) {return 1;}
   if (argc == 2)
   {
     client = n.serviceClient<robotics_hw1::SetZeroPose>("set_zero_pose");
@@ -92,15 +92,17 @@ int main(int argc, char **argv)
     srv_custom.request.theta = atof(argv[3]);
     if (client.call(srv_custom)) {
       p = srv_custom.response.pose;
-      pub.publish(p);
+      while (pub.getNumSubscribers() < 1){
+        pub.publish(p);
+      }
     } else {
       ROS_ERROR("Failed to call SetPose service");
     }
   }
 
-  //pub.publish(p);
-  ros::spinOnce();
 
+  pub.publish(p);
+  ros::spinOnce();
 
   return 0;
 }

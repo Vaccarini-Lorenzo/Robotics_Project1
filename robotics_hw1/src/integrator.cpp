@@ -9,6 +9,7 @@
 #include <tf2/LinearMath/Quaternion.h>
 #include <tf2_geometry_msgs/tf2_geometry_msgs.h>
 #include <dynamic_reconfigure/server.h>
+#include "robotics_hw1/CustomOdom.h"
 #include <robotics_hw1/integrationConfig.h>
 
 char integration_method; // e => euler; r => runge-kutta
@@ -31,6 +32,7 @@ private:
   ros::Subscriber sub;
   ros::Subscriber pose_sub;
   ros::Publisher pub;
+  ros::Publisher pub1;
   geometry_msgs::Pose curr_pose;
   double th;
   ros::Time last_time;
@@ -40,6 +42,7 @@ public:
     sub = n.subscribe("/wheels_velocity", 1, &integrator_pub_sub::callback, this);
     pose_sub = n.subscribe("/reset_odom", 1, &integrator_pub_sub::pose_callback, this);
     pub = n.advertise<nav_msgs::Odometry>("/my_odom", 1);
+    pub1 = n.advertise<robotics_hw1::CustomOdom>("/custom_odom", 1);
 
     curr_pose.position.x = 0;
     curr_pose.position.y = 0;
@@ -49,7 +52,8 @@ public:
 
     last_time = ros::Time::now();
     current_time = ros::Time::now();
-    integration_method = 'r';
+//  Settato di default su RK tramite dynamic_reconfigure
+//  integration_method = 'r';
   }
 
   void euler(const geometry_msgs::TwistStamped::ConstPtr& v, double dt) {
@@ -76,14 +80,20 @@ public:
 
     tf::Transform transform;
     nav_msgs::Odometry odom;
+    robotics_hw1::CustomOdom custom_odom;
+
     odom.header.stamp = current_time;
     odom.header.frame_id = "odom";
+//    custom_odom.odom.header.stamp  = current_time;
+//    custom_odom.odom.header.frame_id = "custom_odom";
 
     switch (integration_method) {
       case 'e':
+        custom_odom.integration_method = "Euler";
         euler(v, delta_t);
         break;
       case 'r':
+        custom_odom.integration_method = "Runge-Kutta";
         runge_kutta(v, delta_t);
         break;
       default:
@@ -101,9 +111,11 @@ public:
     odom.child_frame_id = "base_link";
     odom.twist.twist.linear.x = v->twist.linear.x;
     odom.twist.twist.angular.z = v->twist.angular.z;
+    custom_odom.odom = odom;
 
     last_time = current_time;
     pub.publish(odom);
+    pub1.publish(custom_odom);
     ROS_INFO("pose:\n\tx= %f\n\ty= %f\n\ttheta= %f", curr_pose.position.x, curr_pose.position.y, th);
   }
 
