@@ -1,5 +1,6 @@
 <launch>
-<node pkg="robotics_hw1" type="wheels" name="wheels" launch-prefix="gnome-terminal -e" />
-<node pkg="robotics_hw1" type="integrator" name="integrator" launch-prefix="gnome-terminal -e" />
-<node pkg="rosbag" type="play" name="bag" args="$(find robotics_hw1)/bag1.bag"/>
+  <param name="initial_pose" value="0,0,0" />
+  <node pkg="robotics_hw1" type="wheels" name="wheels" />
+  <node pkg="robotics_hw1" type="integrator" name="integrator" launch-prefix="gnome-terminal -e" />
+  <node pkg="rosbag" type="play" name="bag" args="$(find robotics_hw1)/bag1.bag"/>
 </launch>

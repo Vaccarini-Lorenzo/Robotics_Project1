@@ -88,14 +88,3 @@ add_dependencies(service_client
   ${${PROJECT_NAME}_EXPORTED_TARGETS}
   ${catkin_EXPORTED_TARGETS}
 )
-
-## Services:
-## SetPose
-add_executable(set_pose src/set_pose.cpp)
-target_link_libraries(set_pose ${catkin_LIBRARIES})
-add_dependencies(set_pose ${catkin_EXPORTED_TARGETS})
-
-## SetZeroPose
-add_executable(set_zero_pose src/set_zero_pose.cpp)
-target_link_libraries(set_zero_pose ${catkin_LIBRARIES})
-add_dependencies(set_zero_pose ${catkin_EXPORTED_TARGETS})
